@@ -1,0 +1,988 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Proctored Exam Environment</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <style>
+        *,
+        *::before,
+        *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #06060f;
+            --bg-secondary: #0c0c1e;
+            --bg-card: rgba(15, 15, 35, 0.85);
+            --bg-card-hover: rgba(20, 20, 45, 0.95);
+            --border: rgba(100, 100, 255, 0.08);
+            --border-active: rgba(100, 100, 255, 0.2);
+            --text-primary: #e8eaf6;
+            --text-secondary: #8890b5;
+            --text-muted: #4a5280;
+            --accent: #6366f1;
+            --accent-glow: rgba(99, 102, 241, 0.3);
+            --red: #ef4444;
+            --red-glow: rgba(239, 68, 68, 0.25);
+            --green: #22c55e;
+            --green-glow: rgba(34, 197, 94, 0.25);
+            --yellow: #f59e0b;
+            --yellow-glow: rgba(245, 158, 11, 0.25);
+            --radius: 16px;
+            --radius-sm: 10px;
+        }
+
+        html,
+        body {
+            height: 100%;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            overflow: hidden;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        /* ── Background Gradient Animation ── */
+        body::before {
+            content: '';
+            position: fixed;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(ellipse at 30% 20%, rgba(99, 102, 241, 0.06) 0%, transparent 50%),
+                radial-gradient(ellipse at 70% 80%, rgba(239, 68, 68, 0.04) 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 50%, rgba(34, 197, 94, 0.03) 0%, transparent 60%);
+            animation: bgShift 20s ease-in-out infinite alternate;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        @keyframes bgShift {
+            0% {
+                transform: translate(0, 0) rotate(0deg);
+            }
+
+            100% {
+                transform: translate(-5%, 3%) rotate(3deg);
+            }
+        }
+
+        /* ── Layout ── */
+        .app-container {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        /* ── Header ── */
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 32px;
+            background: rgba(6, 6, 15, 0.9);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .header-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .header-brand .shield {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, var(--accent), #818cf8);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            box-shadow: 0 0 20px var(--accent-glow);
+        }
+
+        .header-brand h1 {
+            font-size: 16px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+
+        .header-brand span {
+            font-size: 11px;
+            color: var(--text-muted);
+            font-weight: 500;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .header-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            border-radius: var(--radius-sm);
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+        }
+
+        .header-status .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--red);
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+                box-shadow: 0 0 0 0 var(--red-glow);
+            }
+
+            50% {
+                opacity: 0.6;
+                box-shadow: 0 0 0 6px transparent;
+            }
+        }
+
+        .header-status span {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--red);
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        /* ── Main Content ── */
+        .main-content {
+            flex: 1;
+            display: grid;
+            grid-template-columns: 1fr 360px;
+            gap: 24px;
+            padding: 24px 32px;
+            overflow: auto;
+        }
+
+        /* ── Left Panel — Detection Dashboard ── */
+        .dashboard {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .section-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 4px;
+        }
+
+        .detection-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 16px;
+        }
+
+        .detection-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 20px;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .detection-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, var(--accent), transparent);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .detection-card.triggered::before {
+            background: linear-gradient(90deg, transparent, var(--red), transparent);
+            opacity: 1;
+        }
+
+        .detection-card.safe::before {
+            background: linear-gradient(90deg, transparent, var(--green), transparent);
+            opacity: 1;
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+
+        .card-header .icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            background: rgba(99, 102, 241, 0.1);
+            border: 1px solid rgba(99, 102, 241, 0.15);
+        }
+
+        .card-header .status-badge {
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+        }
+
+        .badge-monitoring {
+            background: rgba(99, 102, 241, 0.15);
+            color: var(--accent);
+            border: 1px solid rgba(99, 102, 241, 0.2);
+        }
+
+        .badge-blocked {
+            background: rgba(239, 68, 68, 0.15);
+            color: var(--red);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            animation: flashBadge 1s ease;
+        }
+
+        .badge-safe {
+            background: rgba(34, 197, 94, 0.15);
+            color: var(--green);
+            border: 1px solid rgba(34, 197, 94, 0.2);
+        }
+
+        @keyframes flashBadge {
+
+            0%,
+            100% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.1);
+            }
+        }
+
+        .card-title {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .card-desc {
+            font-size: 12px;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        .card-counter {
+            margin-top: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .card-counter .count {
+            font-size: 28px;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--accent), #a78bfa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .card-counter.triggered .count {
+            background: linear-gradient(135deg, var(--red), #fb923c);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .card-counter .label {
+            font-size: 11px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* ── Right Panel — Event Log ── */
+        .event-panel {
+            display: flex;
+            flex-direction: column;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            backdrop-filter: blur(10px);
+            overflow: hidden;
+        }
+
+        .event-panel-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .event-panel-header h3 {
+            font-size: 13px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        .event-panel-header .event-count {
+            padding: 2px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+            background: rgba(239, 68, 68, 0.15);
+            color: var(--red);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+        }
+
+        .event-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 8px;
+        }
+
+        .event-list::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .event-list::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .event-list::-webkit-scrollbar-thumb {
+            background: var(--text-muted);
+            border-radius: 4px;
+        }
+
+        .event-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 10px 12px;
+            border-radius: var(--radius-sm);
+            margin-bottom: 4px;
+            animation: slideIn 0.3s ease;
+            transition: background 0.2s ease;
+        }
+
+        .event-item:hover {
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .event-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-top: 5px;
+            flex-shrink: 0;
+        }
+
+        .event-dot.red {
+            background: var(--red);
+            box-shadow: 0 0 6px var(--red-glow);
+        }
+
+        .event-dot.yellow {
+            background: var(--yellow);
+            box-shadow: 0 0 6px var(--yellow-glow);
+        }
+
+        .event-dot.green {
+            background: var(--green);
+            box-shadow: 0 0 6px var(--green-glow);
+        }
+
+        .event-text {
+            font-size: 12px;
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+
+        .event-text strong {
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        .event-time {
+            font-size: 10px;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        /* ── Warning Modal ── */
+        .warning-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(8px);
+            z-index: 10000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .warning-overlay.show {
+            display: flex;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        .warning-modal {
+            background: linear-gradient(145deg, #1a0a0a, #200f0f);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 480px;
+            text-align: center;
+            box-shadow: 0 0 60px rgba(239, 68, 68, 0.15), 0 20px 60px rgba(0, 0, 0, 0.5);
+            animation: scaleIn 0.3s ease;
+        }
+
+        @keyframes scaleIn {
+            from {
+                transform: scale(0.9);
+                opacity: 0;
+            }
+
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .warning-modal .warning-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+        }
+
+        .warning-modal h2 {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--red);
+            margin-bottom: 8px;
+        }
+
+        .warning-modal p {
+            font-size: 14px;
+            color: var(--text-secondary);
+            line-height: 1.7;
+            margin-bottom: 24px;
+        }
+
+        .warning-modal button {
+            padding: 12px 32px;
+            border-radius: 12px;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            background: rgba(239, 68, 68, 0.15);
+            color: var(--red);
+            font-family: 'Inter', sans-serif;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            letter-spacing: 0.5px;
+        }
+
+        .warning-modal button:hover {
+            background: rgba(239, 68, 68, 0.25);
+            transform: translateY(-1px);
+        }
+
+        /* ── Footer ── */
+        .footer {
+            padding: 12px 32px;
+            text-align: center;
+            font-size: 11px;
+            color: var(--text-muted);
+            border-top: 1px solid var(--border);
+            background: rgba(6, 6, 15, 0.9);
+            backdrop-filter: blur(20px);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <div class="header">
+            <div class="header-brand">
+                <div class="shield">🛡️</div>
+                <div>
+                    <h1>Proctored Exam Environment</h1>
+                    <span>Security Monitoring Active</span>
+                </div>
+            </div>
+            <div class="header-status">
+                <div class="dot"></div>
+                <span>Proctoring Active</span>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Left — Detection Dashboard -->
+            <div class="dashboard">
+                <div class="section-title">Detection Modules</div>
+                <div class="detection-grid">
+                    <!-- Right-Click Detection -->
+                    <div class="detection-card" id="card-rightclick">
+                        <div class="card-header">
+                            <div class="icon">🖱️</div>
+                            <div class="status-badge badge-monitoring" id="badge-rightclick">Monitoring</div>
+                        </div>
+                        <div class="card-title">Right-Click Detection</div>
+                        <div class="card-desc">Context menu and auxiliary click events are blocked and logged.</div>
+                        <div class="card-counter" id="counter-rightclick">
+                            <div class="count" id="count-rightclick">0</div>
+                            <div class="label">Attempts blocked</div>
+                        </div>
+                    </div>
+
+                    <!-- Fullscreen Exit Detection -->
+                    <div class="detection-card" id="card-fullscreen">
+                        <div class="card-header">
+                            <div class="icon">📺</div>
+                            <div class="status-badge badge-monitoring" id="badge-fullscreen">Monitoring</div>
+                        </div>
+                        <div class="card-title">Fullscreen Exit Detection</div>
+                        <div class="card-desc">Exiting fullscreen mode will trigger a violation alert.</div>
+                        <div class="card-counter" id="counter-fullscreen">
+                            <div class="count" id="count-fullscreen">0</div>
+                            <div class="label">Exits detected</div>
+                        </div>
+                    </div>
+
+                    <!-- Keyboard Monitoring -->
+                    <div class="detection-card" id="card-keyboard">
+                        <div class="card-header">
+                            <div class="icon">⌨️</div>
+                            <div class="status-badge badge-monitoring" id="badge-keyboard">Monitoring</div>
+                        </div>
+                        <div class="card-title">Keyboard Monitoring</div>
+                        <div class="card-desc">All keystrokes are captured and logged. Suspicious shortcuts flagged.
+                        </div>
+                        <div class="card-counter" id="counter-keyboard">
+                            <div class="count" id="count-keyboard">0</div>
+                            <div class="label">Keys captured</div>
+                        </div>
+                    </div>
+
+                    <!-- Tab/Visibility Detection -->
+                    <div class="detection-card" id="card-visibility">
+                        <div class="card-header">
+                            <div class="icon">👁️</div>
+                            <div class="status-badge badge-monitoring" id="badge-visibility">Monitoring</div>
+                        </div>
+                        <div class="card-title">Tab Switch / Blur Detection</div>
+                        <div class="card-desc">Leaving this window or switching tabs triggers an immediate alert.</div>
+                        <div class="card-counter" id="counter-visibility">
+                            <div class="count" id="count-visibility">0</div>
+                            <div class="label">Switches detected</div>
+                        </div>
+                    </div>
+
+                    <!-- Copy/Paste Detection -->
+                    <div class="detection-card" id="card-clipboard">
+                        <div class="card-header">
+                            <div class="icon">📋</div>
+                            <div class="status-badge badge-monitoring" id="badge-clipboard">Monitoring</div>
+                        </div>
+                        <div class="card-title">Clipboard Detection</div>
+                        <div class="card-desc">Copy, cut, and paste operations are blocked and logged.</div>
+                        <div class="card-counter" id="counter-clipboard">
+                            <div class="count" id="count-clipboard">0</div>
+                            <div class="label">Attempts blocked</div>
+                        </div>
+                    </div>
+
+                    <!-- DevTools Detection -->
+                    <div class="detection-card" id="card-devtools">
+                        <div class="card-header">
+                            <div class="icon">🔧</div>
+                            <div class="status-badge badge-monitoring" id="badge-devtools">Blocked</div>
+                        </div>
+                        <div class="card-title">DevTools Detection</div>
+                        <div class="card-desc">Developer tools are disabled. F12 and Ctrl+Shift+I are blocked.</div>
+                        <div class="card-counter" id="counter-devtools">
+                            <div class="count" id="count-devtools">0</div>
+                            <div class="label">Attempts blocked</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right — Event Log -->
+            <div class="event-panel">
+                <div class="event-panel-header">
+                    <h3>🔴 Violation Log</h3>
+                    <div class="event-count" id="total-violations">0</div>
+                </div>
+                <div class="event-list" id="event-list">
+                    <div class="event-item">
+                        <div class="event-dot green"></div>
+                        <div>
+                            <div class="event-text"><strong>System</strong> — Proctoring modules initialized</div>
+                            <div class="event-time" id="init-time"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            GhostClick Test App v1.0 — Proctoring Simulation Environment — All detections are for testing purposes only
+        </div>
+    </div>
+
+    <!-- Warning Modal -->
+    <div class="warning-overlay" id="warning-overlay">
+        <div class="warning-modal">
+            <div class="warning-icon">⚠️</div>
+            <h2 id="warning-title">Violation Detected</h2>
+            <p id="warning-message">A proctoring violation has been detected. This incident has been logged.</p>
+            <button onclick="dismissWarning()">Acknowledge</button>
+        </div>
+    </div>
+
+    <script>
+        // ===================================================================
+        //  STATE
+        // ===================================================================
+        const state = {
+            rightclick: 0,
+            fullscreen: 0,
+            keyboard: 0,
+            visibility: 0,
+            clipboard: 0,
+            devtools: 0,
+            totalViolations: 0
+        };
+
+        // ===================================================================
+        //  HELPERS
+        // ===================================================================
+        function timestamp() {
+            return new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        }
+
+        function addEvent(type, message, color = 'red') {
+            const list = document.getElementById('event-list');
+            const item = document.createElement('div');
+            item.className = 'event-item';
+            item.innerHTML = `
+                <div class="event-dot ${color}"></div>
+                <div>
+                    <div class="event-text"><strong>${type}</strong> — ${message}</div>
+                    <div class="event-time">${timestamp()}</div>
+                </div>
+            `;
+            list.insertBefore(item, list.firstChild.nextSibling);
+
+            state.totalViolations++;
+            document.getElementById('total-violations').textContent = state.totalViolations;
+        }
+
+        function updateCard(id, count) {
+            document.getElementById(`count-${id}`).textContent = count;
+            const card = document.getElementById(`card-${id}`);
+            const badge = document.getElementById(`badge-${id}`);
+            const counter = document.getElementById(`counter-${id}`);
+
+            card.classList.add('triggered');
+            card.classList.remove('safe');
+            badge.className = 'status-badge badge-blocked';
+            badge.textContent = 'Triggered';
+            counter.classList.add('triggered');
+
+            // Flash effect
+            card.style.borderColor = 'rgba(239, 68, 68, 0.3)';
+            setTimeout(() => { card.style.borderColor = ''; }, 1000);
+        }
+
+        function showWarning(title, message) {
+            document.getElementById('warning-title').textContent = title;
+            document.getElementById('warning-message').textContent = message;
+            document.getElementById('warning-overlay').classList.add('show');
+        }
+
+        function dismissWarning() {
+            document.getElementById('warning-overlay').classList.remove('show');
+        }
+
+        // ===================================================================
+        //  1. RIGHT-CLICK DETECTION
+        // ===================================================================
+        document.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            state.rightclick++;
+            updateCard('rightclick', state.rightclick);
+            addEvent('Right-Click', 'Context menu attempt blocked', 'red');
+            showWarning('Right-Click Blocked', 'Right-clicking is not allowed during the exam. This violation has been logged and reported.');
+            return false;
+        }, true);
+
+        document.addEventListener('auxclick', (e) => {
+            if (e.button === 2) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+            }
+        }, true);
+
+        // Block mouse down/up for right button
+        document.addEventListener('mousedown', (e) => {
+            if (e.button === 2) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+            }
+        }, true);
+
+        // ===================================================================
+        //  2. FULLSCREEN EXIT DETECTION
+        // ===================================================================
+        document.addEventListener('fullscreenchange', () => {
+            if (!document.fullscreenElement) {
+                state.fullscreen++;
+                updateCard('fullscreen', state.fullscreen);
+                addEvent('Fullscreen', 'Fullscreen exit detected!', 'red');
+                showWarning('Fullscreen Violation', 'You have exited fullscreen mode. This is a critical violation. Please return to fullscreen immediately.');
+
+                // Force back to fullscreen after a delay
+                setTimeout(() => {
+                    document.documentElement.requestFullscreen().catch(() => { });
+                }, 2000);
+            }
+        });
+
+        document.addEventListener('webkitfullscreenchange', () => {
+            if (!document.webkitFullscreenElement && !document.fullscreenElement) {
+                state.fullscreen++;
+                updateCard('fullscreen', state.fullscreen);
+                addEvent('Fullscreen', 'Webkit fullscreen exit detected!', 'red');
+            }
+        });
+
+        // ===================================================================
+        //  3. KEYBOARD MONITORING
+        // ===================================================================
+        const suspiciousKeys = ['F12', 'F5', 'Escape', 'Tab', 'PrintScreen'];
+        const suspiciousCombos = [
+            { ctrl: true, shift: true, key: 'I' },
+            { ctrl: true, shift: true, key: 'J' },
+            { ctrl: true, shift: true, key: 'C' },
+            { ctrl: true, key: 'U' },
+            { ctrl: true, key: 'C' },
+            { ctrl: true, key: 'V' },
+            { ctrl: true, key: 'X' },
+            { ctrl: true, key: 'A' },
+            { alt: true, key: 'Tab' },
+            { alt: true, key: 'F4' },
+        ];
+
+        document.addEventListener('keydown', (e) => {
+            state.keyboard++;
+            updateCard('keyboard', state.keyboard);
+
+            let keyDesc = '';
+            if (e.ctrlKey) keyDesc += 'Ctrl+';
+            if (e.shiftKey) keyDesc += 'Shift+';
+            if (e.altKey) keyDesc += 'Alt+';
+            keyDesc += e.key;
+
+            // Check for suspicious keys
+            if (suspiciousKeys.includes(e.key)) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                addEvent('Keyboard', `Suspicious key blocked: ${keyDesc}`, 'red');
+                showWarning('Keyboard Violation', `The key combination "${keyDesc}" is not allowed during the exam.`);
+                return false;
+            }
+
+            // Check for suspicious combos
+            for (const combo of suspiciousCombos) {
+                const match = (!!combo.ctrl === !!e.ctrlKey) &&
+                    (!!combo.shift === !!e.shiftKey) &&
+                    (!!combo.alt === !!e.altKey) &&
+                    (combo.key.toLowerCase() === e.key.toLowerCase());
+                if (match) {
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
+                    addEvent('Keyboard', `Blocked shortcut: ${keyDesc}`, 'red');
+                    showWarning('Keyboard Violation', `The shortcut "${keyDesc}" is blocked in this exam environment.`);
+                    return false;
+                }
+            }
+
+            // Log normal keys (less alarming)
+            if (state.keyboard % 10 === 0) {
+                addEvent('Keyboard', `${state.keyboard} keystrokes captured`, 'yellow');
+            }
+        }, true);
+
+        document.addEventListener('keyup', (e) => {
+            // Capture but don't count again
+        }, true);
+
+        document.addEventListener('keypress', (e) => {
+            // Capture
+        }, true);
+
+        // ===================================================================
+        //  4. TAB SWITCH / VISIBILITY DETECTION
+        // ===================================================================
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden || document.visibilityState !== 'visible') {
+                state.visibility++;
+                updateCard('visibility', state.visibility);
+                addEvent('Tab Switch', 'Window lost focus / tab switched', 'red');
+                showWarning('Focus Violation', 'You have switched away from the exam window. This is a serious violation and has been logged.');
+            }
+        });
+
+        window.addEventListener('blur', () => {
+            state.visibility++;
+            updateCard('visibility', state.visibility);
+            addEvent('Blur', 'Window blur detected — possible tab switch', 'red');
+        });
+
+        window.addEventListener('focusout', (e) => {
+            if (e.target === window) {
+                addEvent('Focus', 'Window focusout detected', 'yellow');
+            }
+        });
+
+        window.addEventListener('mouseleave', () => {
+            addEvent('Mouse', 'Cursor left the exam window', 'yellow');
+        });
+
+        // Check hasFocus periodically
+        setInterval(() => {
+            if (!document.hasFocus()) {
+                addEvent('Focus', 'document.hasFocus() returned false', 'yellow');
+            }
+        }, 5000);
+
+        // ===================================================================
+        //  5. CLIPBOARD DETECTION
+        // ===================================================================
+        ['copy', 'cut', 'paste'].forEach(type => {
+            document.addEventListener(type, (e) => {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                state.clipboard++;
+                updateCard('clipboard', state.clipboard);
+                addEvent('Clipboard', `${type.charAt(0).toUpperCase() + type.slice(1)} attempt blocked`, 'red');
+                showWarning('Clipboard Violation', `${type.charAt(0).toUpperCase() + type.slice(1)} operations are not allowed during the exam.`);
+                return false;
+            }, true);
+        });
+
+        // Also block via onXXX handlers
+        document.oncopy = () => false;
+        document.oncut = () => false;
+        document.onpaste = () => false;
+        document.onselectstart = () => false;
+        document.ondragstart = () => false;
+
+        // ===================================================================
+        //  6. DEVTOOLS DETECTION
+        // ===================================================================
+        // Size-based detection (DevTools changes window dimensions)
+        let prevWidth = window.outerWidth;
+        let prevHeight = window.outerHeight;
+        setInterval(() => {
+            const widthDiff = window.outerWidth - window.innerWidth;
+            const heightDiff = window.outerHeight - window.innerHeight;
+            if (widthDiff > 200 || heightDiff > 200) {
+                state.devtools++;
+                updateCard('devtools', state.devtools);
+                addEvent('DevTools', 'DevTools may be open (size discrepancy detected)', 'red');
+            }
+        }, 3000);
+
+        // debugger statement detection
+        setInterval(() => {
+            const start = performance.now();
+            debugger;
+            const end = performance.now();
+            if (end - start > 100) {
+                state.devtools++;
+                updateCard('devtools', state.devtools);
+                addEvent('DevTools', 'Debugger breakpoint detected!', 'red');
+                showWarning('DevTools Detected', 'Developer tools have been detected. This is a critical violation.');
+            }
+        }, 10000);
+
+        // ===================================================================
+        //  INIT
+        // ===================================================================
+        document.getElementById('init-time').textContent = timestamp();
+
+        // Request fullscreen on first click
+        document.addEventListener('click', function fsHandler() {
+            document.documentElement.requestFullscreen().catch(() => { });
+            document.removeEventListener('click', fsHandler);
+        });
+
+        console.log('%c⚠ PROCTORING ACTIVE', 'color: red; font-size: 24px; font-weight: bold;');
+        console.log('%cAll activities are being monitored and logged.', 'color: #888; font-size: 14px;');
+    </script>
+</body>
+
+</html>

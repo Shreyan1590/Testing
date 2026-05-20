@@ -1,0 +1,25 @@
+{
+    "name": "ghostclick-test-app",
+    "version": "1.0.0",
+    "description": "Proctoring-style test app — blocks right-click, detects fullscreen exit, monitors keys, detects tab switching. Used to verify GhostClick extension injection.",
+    "main": "main.js",
+    "scripts": {
+        "start": "electron .",
+        "build": "electron-builder --win --dir",
+        "dist": "electron-builder --win"
+    },
+    "build": {
+        "appId": "com.ghostclick.testapp",
+        "productName": "GhostClick Test App",
+        "directories": {
+            "output": "dist"
+        },
+        "win": {
+            "target": "portable"
+        }
+    },
+    "devDependencies": {
+        "electron": "^28.0.0",
+        "electron-builder": "^24.0.0"
+    }
+}
